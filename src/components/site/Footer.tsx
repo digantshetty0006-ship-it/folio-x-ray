@@ -53,6 +53,16 @@ export function Footer() {
                     </Link>
                   </li>
                 ))}
+                <li>
+                  <a
+                    href={site.github}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-paper/80 underline-offset-4 hover:text-paper hover:underline"
+                  >
+                    GitHub
+                  </a>
+                </li>
               </ul>
             </div>
           </div>

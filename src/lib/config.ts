@@ -18,6 +18,7 @@ export const site = {
     "A free, private tool for Indian mutual fund investors. Understand XIRR, overlap, costs and goal odds without uploading your portfolio.",
   location: "Mumbai, IN",
   contactEmail: "hello@folioxray.in",
+  github: "https://github.com/digantshetty0006-ship-it/folio-x-ray",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://folio-xray.vercel.app",
   accent: "#E5482B",
   author: {
