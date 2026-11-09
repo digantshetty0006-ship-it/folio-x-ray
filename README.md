@@ -1,53 +1,69 @@
 # Folio X-Ray
 
-A free, browser-first mutual fund portfolio X-ray for Indian investors. Search a fund, add units or a SIP, and read a report that describes XIRR, allocation, concentration, Regular-plan costs, a risk mirror and a seeded Monte Carlo range. Holdings never leave the browser.
+**Live: [folio-x-ray.vercel.app](https://folio-x-ray.vercel.app)**
 
-The site is built with the Next.js App Router, strict TypeScript, Tailwind CSS v4, Framer Motion, Recharts, zod and Vitest. It has no database, accounts, analytics or advertising pixels.
+![The Folio X-Ray homepage](docs/home.png)
 
-## What is in the product
+I built Folio X-Ray because I wanted a straight answer to a simple question: what do I actually own inside my mutual fund portfolio?
 
-- `/` — editorial homepage and tool entry point.
-- `/xray` — fund search, optional CAS PDF import, holdings, report and print stylesheet.
-- `/guides` — six long-form guides on returns, costs, overlap, SIPs, risk and factsheets.
-- `/method` — formulas, thresholds, assumptions and limitations.
-- `/about`, `/privacy`, `/legal` — project context, data-flow disclosure and disclaimers.
-- `/api/funds/search?q=` — trimmed fund search results.
-- `/api/funds/[code]` — fund metadata and NAV history.
+Most trackers want an account and a statement upload before they show you anything. I didn't want that. This is a small, free tool that does the arithmetic in your browser. Add a fund, enter units or a SIP, and you get a report: current value, XIRR, where the money sits, what stands out, what a Regular plan costs next to a Direct one, and a range of possible futures. Your holdings are not uploaded.
 
-The report includes current value, invested amount, gain/loss, XIRR, category and fund allocation, concentration flags, a Regular-vs-Direct cost illustration, a three-input risk mirror and a 1,000-run Monte Carlo projection. The print view is designed for A4 PDF export.
+I'm a third-year IT student in Navi Mumbai, not a financial adviser. The site describes the numbers you enter. It does not tell you what to buy or sell.
 
-## Privacy model
+## The X-Ray
 
-| Data | Where it goes |
+![The X-Ray entry screen](docs/xray.png)
+
+The report has six parts:
+
+- **Value and return.** Current value, invested amount, gain or loss, and XIRR. XIRR is annualised and cash-flow weighted, so it is not the same as the point-to-point return printed on a fund factsheet.
+- **Allocation.** A category donut and a fund donut, plus the same numbers as plain lists. Category labels come from the data source's `scheme_category`. "Gold & other" is a broad bucket that catches index funds, fund of funds and commodity schemes.
+- **Plain-language notes.** Concentration observations at fixed thresholds: one fund at 35% or more, one category at 80% or more, or three funds sharing a category. These are notes, not instructions.
+- **The Regular plan bill.** An illustration of what a higher expense ratio could compound to over time, using a constant return and a constant expense gap. It is not a TER claim.
+- **A risk mirror.** Three questions about horizon, fall tolerance and how much of your savings this portfolio represents. The result points out tension between your answers and your current mix. There is no score, no band and no target allocation.
+- **A thousand possible futures.** A seeded Monte Carlo projection that returns a range and a probability, not a promised corpus.
+
+The print stylesheet is built for A4, so "Save as PDF" gives you a clean report.
+
+## What it deliberately doesn't do
+
+No accounts. No portfolio uploads. No analytics, ad pixels or session recording. No fund recommendations. No suitability score. No tax or exit-load calculation. The tool is for Indian mutual funds and INR amounts, and that is the whole scope.
+
+## Where your data goes
+
+| Data | What happens |
 | --- | --- |
-| Fund search terms and six-digit fund codes | Sent to this site's server, which proxies public NAV data from `api.mfapi.in`. |
-| Units, amounts, purchase dates, SIP details, risk answers | Stay in the browser. Never sent as a portfolio. |
-| Saved folio | `localStorage`, only when "Remember this folio on this device" is on. Off by default. |
+| Fund search terms and fund codes | Sent to this site's server, which proxies public NAV data from `api.mfapi.in`. |
+| Units, amounts, dates, SIP details, risk answers | Stay in the browser. Never sent as a portfolio. |
+| Saved folio | `localStorage`, only if you turn on "Remember this folio on this device". Off by default. |
 | CAS PDF, PAN and date of birth | Parsed in the browser with `pdfjs-dist`. The PDF and credentials are not uploaded. |
-| Report and charts | Calculated and rendered in the browser. |
-| Analytics, accounts, ad pixels | None. |
+| Report and charts | Calculated and drawn in the browser. |
 
-The server can see search terms and fund codes in request paths. It does not receive a list of your holdings, values, gains, dates or XIRR. The in-memory rate limiter uses a coarse client key and does not persist a portfolio.
+The server can see search terms and fund codes in request paths. It never receives your list of holdings, values, gains, dates or XIRR. The rate limiter keeps a coarse client key in memory and does not persist anything about your portfolio.
 
 "Clear all my data" removes the saved folio and the remember preference from the browser.
 
+## How the numbers work
+
+- **XIRR** uses Newton's method with a bisection fallback. It needs at least two cash flows on different dates.
+- **SIP units** are generated from the NAV on or after each contribution date.
+- **Allocation** groups funds by the upstream `scheme_category` into equity, debt, hybrid and gold-and-other.
+- **Concentration flags** fire at 35% for a single fund, 80% for a single category, or three funds in one category.
+- **The cost gap** compounds a Regular-plan value at a constant assumed return and expense gap. It is an illustration, not a fee quote.
+- **The risk mirror** compares your three answers with the current mix. It produces observations, not a label.
+- **Monte Carlo** runs 1,000 seeded paths with a constant expected return and volatility.
+
+The engine lives in `src/lib/engine` and has no React or network dependencies, which is why most of it is covered by tests.
+
 ## Stack
 
-- Next.js 16.4.5 (App Router, webpack build)
-- React 19.3
-- TypeScript in strict mode
-- Tailwind CSS v4
-- Framer Motion
-- Recharts, restyled to the site palette
-- zod
-- Vitest and jsdom
-- `pdfjs-dist` for optional client-side CAS parsing
+Next.js 16.4.5 with the App Router, React 19, strict TypeScript, Tailwind CSS v4, Framer Motion, Recharts, zod, Vitest and `pdfjs-dist` for the optional CAS import. No database and no third-party services beyond the public NAV API.
 
-The design uses paper `#F2EEE6`, ink `#14130F` and accent `#E5482B`. No gradients, stock photography or default Recharts colours.
+The palette is paper `#F2EEE6`, ink `#14130F` and accent `#E5482B`. No gradients, stock photos or default Recharts colours.
 
-## Local development
+## Running it locally
 
-Requirements: Node.js 20 or newer and npm.
+You need Node.js 20 or newer and npm.
 
 ```bash
 npm install
@@ -56,7 +72,7 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-The scripts deliberately use `next dev --webpack` and `next build --webpack`. On some Windows and OneDrive setups the native Next SWC binary cannot be loaded (`not a valid Win32 application`); webpack keeps the build reproducible. If your environment loads SWC correctly, you can switch to the default Next commands, but test a production build first.
+The scripts use `next dev --webpack` and `next build --webpack`. On my Windows and OneDrive setup the native Next SWC binary refuses to load (`not a valid Win32 application`), and webpack keeps the build reproducible. If your machine loads SWC correctly, you can switch back to the default Next commands, but test a production build first.
 
 Other scripts:
 
@@ -70,147 +86,45 @@ npm run build
 npm start
 ```
 
-Run `typecheck`, `lint`, `test` and `build` sequentially. A production build writes to `.next`; restart `npm start` after rebuilding if you are testing locally.
+Run typecheck, lint, tests and build in that order. A build writes to `.next`, so restart `npm start` afterwards if you are testing locally.
 
-## Environment variables
+## Environment
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | No | Public origin used for canonical URLs, Open Graph, JSON-LD, sitemap and robots. Defaults to `https://folio-x-ray.vercel.app`. |
+| `NEXT_PUBLIC_SITE_URL` | No | Public origin used by canonical URLs, Open Graph, JSON-LD, the sitemap and robots. Defaults to `https://folio-x-ray.vercel.app`. |
 
-There are no secrets, database URLs or third-party API keys.
+There are no secrets, database URLs or API keys.
 
-Because `NEXT_PUBLIC_SITE_URL` is inlined at build time, set it to the final production origin before the production build. If you deploy to a different Vercel URL, update it and redeploy so metadata does not point at the old origin.
+`NEXT_PUBLIC_SITE_URL` is inlined at build time. If you deploy to a different origin, set it before the production build and redeploy, otherwise metadata will point at the old address.
 
-## Architecture
+## Deploying
 
-```text
-src/
-  app/                 routes, metadata, API handlers, sitemap, robots, manifest
-  components/          site chrome, editorial blocks, X-Ray tool and charts
-  lib/
-    api/               mfapi client, schemas, cache and rate limiter
-    content/           guide copy, risk questions, sample portfolio
-    engine/            pure valuation, SIP, XIRR, allocation, flags,
-                       cost-gap, risk-mirror and Monte Carlo functions
-    portfolio/         client state, storage schema and CAS import helpers
+The project is already deployed on Vercel at [folio-x-ray.vercel.app](https://folio-x-ray.vercel.app). To deploy your own copy:
+
+```bash
+npx vercel login
+npx vercel --prod
 ```
 
-The engine is intentionally independent of React and the network. Its functions take plain inputs and return plain results, which keeps the arithmetic testable. The UI calls the engine through `src/lib/engine/portfolio.ts`.
+Vercel detects Next.js and runs `npm run build`. No database or extra service is needed.
 
-### API behaviour
+If you use a custom domain, add it in Vercel under Project → Settings → Domains, point the DNS records, then set `NEXT_PUBLIC_SITE_URL` to the custom origin and redeploy. Canonical URLs, Open Graph, JSON-LD, the sitemap and robots all read that value.
 
-Both API routes:
+## What I'd like to fix next
 
-- Validate input with zod.
-- Apply a per-IP in-memory rate limit.
-- Time out upstream requests after 8 seconds with `AbortController`.
-- Return trimmed payloads instead of the raw upstream response.
-- Use typed error codes: `upstream_down`, `not_found`, `bad_input`, `rate_limited`.
-- Cache fund detail for about six hours and search results for about one hour at the CDN, with stale-while-revalidate.
-
-Error shape:
-
-```json
-{
-  "ok": false,
-  "error": {
-    "code": "upstream_down",
-    "message": "The fund data source is not responding. Try again shortly.",
-    "retryable": true
-  }
-}
-```
-
-### Engine notes
-
-- XIRR uses Newton's method with a bisection fallback. It needs at least two cash flows on different dates.
-- SIP units are generated from the NAV on or after each contribution date.
-- Allocation groups funds by `scheme_category` into equity, debt, hybrid and gold-and-other.
-- Concentration flags trigger at 35% for one fund, 80% for one category, or three funds sharing a category.
-- The cost gap compounds a single Regular-plan value at a constant assumed return and expense gap. It is an illustration, not a TER claim.
-- The risk mirror asks three questions and reports tension between stated horizon, fall tolerance, share of savings and the current mix. It produces no score, band or target allocation.
-- Monte Carlo runs 1,000 seeded paths and reports a range and a probability, not a promised corpus.
-
-## Assumptions
-
-- Search terms and fund codes necessarily reach the server so it can proxy public NAV data. The privacy copy says this explicitly.
-- Category mapping uses the upstream `scheme_category`. "Other Scheme - Index Funds" and similar labels fall into `gold-and-other`, which is a broad bucket.
-- The CAS importer extracts labelled six-digit AMFI codes, or codes at the start of a line. Bare six-digit numbers are ignored to avoid guessing.
-- The sample portfolio uses real fund names with invented holdings. It is clearly labelled, loaded only when requested and never persisted.
-- The rate limiter is in-memory and best-effort. It resets when a serverless instance is replaced.
-- The report is a description of the numbers entered. It is not a suitability assessment, a recommendation or a tax calculation.
-
-## Known limitations and TODOs
-
-Known limitations:
-
-- Upstream NAV data can be stale or incomplete. A scheme may stop updating, which can leave a holding with no priced units; the report now shows an explicit empty state instead of blank charts.
-- IDCW distributions, stamp duty, exit loads and taxes are not modelled. NAV-only XIRR can be incomplete for distribution schemes.
-- Fund overlap is based on category labels, not disclosed portfolio holdings.
-- The CAS importer supports the layouts it can label reliably; it is not a full transaction-history parser.
-- The risk mirror is three questions, not a full risk profile. It cannot see income, loans, dependants, insurance, taxes or goals.
-- Monte Carlo assumes a constant expected return and volatility; real markets have fatter tails and regime changes.
-- The site is designed for Indian mutual funds and INR amounts.
-- Accessibility has been checked at mobile and desktop widths, with keyboard focus and reduced motion, but not with a formal screen-reader audit.
-- Lighthouse scores vary by machine and network. Run the audit against the production build.
-
-TODOs:
-
-- Add a durable rate-limit store if traffic grows beyond a single instance.
 - Add end-to-end browser tests for search, add holding, restore, clear, CAS fallback and print.
 - Expand the CAS parser for more statement layouts and transaction history.
-- Add holdings-based overlap once a reliable portfolio-disclosure source is available.
-- Add tax and exit-load modelling, clearly separated from the NAV-only return.
+- Model IDCW distributions, stamp duty, exit loads and taxes, kept clearly separate from the NAV-only return.
+- Add holdings-based overlap once there is a reliable portfolio-disclosure source.
 - Run a formal WCAG 2.2 AA audit with screen readers.
-- Add a CI workflow that runs typecheck, lint, tests and a production build on every push.
-- Set `NEXT_PUBLIC_SITE_URL` to the custom domain and add the domain in Vercel.
+- Add a CI workflow for typecheck, lint, tests and a production build.
+- Replace the placeholder contact address in `src/lib/config.ts` with one I actually monitor.
 
-## Deployment on Vercel
+## A few honest limitations
 
-1. Set the production origin before building:
+NAV data can be stale or incomplete. A scheme may stop updating, which can leave a holding with no priced units; the report now shows an explicit empty state instead of blank charts. Overlap is based on category labels, not disclosed holdings. The risk mirror cannot see income, loans, dependants, insurance, taxes or goals. Monte Carlo assumes a constant return and volatility, and real markets have fatter tails. Lighthouse scores vary by machine and network, so run the audit against the production build.
 
-   ```bash
-   npx vercel env add NEXT_PUBLIC_SITE_URL production
-   ```
+## Contact
 
-   Enter the final origin, for example `https://folio-xray.example.com`. If you do not have a custom domain yet, use the Vercel production URL assigned to the project and update this value if the URL changes.
-
-2. Log in and deploy:
-
-   ```bash
-   npx vercel login
-   npx vercel --prod
-   ```
-
-   Vercel detects Next.js, runs `npm run build` and serves the App Router output. The repository does not need a database or any other service.
-
-3. Verify the deployment:
-
-   ```bash
-   curl -I https://your-origin/
-   curl https://your-origin/api/funds/search?q=hdfc
-   curl https://your-origin/sitemap.xml
-   curl https://your-origin/robots.txt
-   curl https://your-origin/manifest.webmanifest
-   ```
-
-   Then open `/xray?sample=1`, confirm the report and charts render, and print or save one PDF.
-
-4. Add a custom domain in the Vercel dashboard under Project → Settings → Domains, or with:
-
-   ```bash
-   npx vercel domains add your-domain.example
-   ```
-
-   Point the DNS records Vercel shows, wait for the certificate, then set `NEXT_PUBLIC_SITE_URL` to the custom origin and redeploy. Canonical URLs, Open Graph, JSON-LD, sitemap and robots all read that value.
-
-The API routes call `api.mfapi.in` at request time. Vercel's serverless functions need outbound network access, which is available by default. The app has no cron jobs or background workers.
-
-## Content and editorial rules
-
-The guides and report copy describe what the numbers show. They do not recommend a fund, a plan, an allocation or a time to buy or sell. The site is not SEBI-registered, is not a financial adviser and is not affiliated with any fund house, AMC, distributor or financial institution.
-
-## Licence and contact
-
-This is a personal educational project. See `/legal` for the full disclaimer. The contact address in `src/lib/config.ts` is a placeholder; replace it with a monitored address before treating the site as a public service.
+This is a personal educational project. See `/legal` for the full disclaimer. The contact address in `src/lib/config.ts` is still a placeholder, so please replace it before treating the site as a public service.
